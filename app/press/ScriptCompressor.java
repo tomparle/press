@@ -11,8 +11,6 @@ import org.mozilla.javascript.ErrorReporter;
 import org.mozilla.javascript.EvaluatorException;
 
 import play.Logger;
-import play.vfs.VirtualFile;
-import press.io.CompressedFile;
 import press.io.FileIO;
 
 import com.yahoo.platform.yui.compressor.JavaScriptCompressor;

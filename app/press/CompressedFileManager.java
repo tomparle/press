@@ -1,9 +1,7 @@
 package press;
 
-import java.util.ArrayList;
 import java.util.List;
 
-import play.vfs.VirtualFile;
 import press.io.CompressedFile;
 
 public abstract class CompressedFileManager {

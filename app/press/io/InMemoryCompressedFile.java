@@ -6,7 +6,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.util.HashSet;
 import java.util.Set;
@@ -19,9 +18,9 @@ import press.PressLogger;
 
 public class InMemoryCompressedFile extends CompressedFile {
 	private static final String FILE_LIST_KEY = "InMemoryFileList";
-	private InputStream inputStream;
-	private Writer writer;
-	private ByteArrayOutputStream outputStream;
+	protected InputStream inputStream;
+	protected Writer writer;
+	protected ByteArrayOutputStream outputStream;
 	private byte[] bytes;
 	private static final String A_VERY_LONG_TIME = "30d";
 
@@ -90,7 +89,7 @@ public class InMemoryCompressedFile extends CompressedFile {
 			outputStream = new ByteArrayOutputStream();
 			try {
 				writer = new BufferedWriter(new OutputStreamWriter(outputStream, "UTF-8"));
-			} catch (final UnsupportedEncodingException e) {
+			} catch (final IOException e) {
 				throw new UnexpectedException(e);
 			}
 		}
@@ -110,12 +109,16 @@ public class InMemoryCompressedFile extends CompressedFile {
 			throw new UnexpectedException(e);
 		}
 
-		final byte[] outBytes = outputStream.toByteArray();
+		final byte[] outBytes = getCompressedData();
 		PressLogger.trace("Saving file of size %d bytes to cache.", outBytes.length);
 		addFileToCache(getFileKey(), outBytes);
 
 		final String inProgressKey = getInProgressKey(getFileKey());
 		Cache.safeDelete(inProgressKey);
+	}
+
+	protected byte[] getCompressedData() {
+		return outputStream.toByteArray();
 	}
 
 	private static String getInProgressKey(String fileKey) {
@@ -176,4 +179,3 @@ public class InMemoryCompressedFile extends CompressedFile {
 		return bytes.length;
 	}
 }
-

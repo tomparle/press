@@ -1,11 +1,8 @@
 package press;
 
-import java.io.File;
-import java.util.List;
 import java.util.Map;
 
 import play.libs.Crypto;
-import play.templates.JavaExtensions;
 import press.io.CompressedFile;
 import press.io.FileIO;
 

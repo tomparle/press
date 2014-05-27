@@ -3,7 +3,6 @@ package press.io;
 import java.io.File;
 import java.io.FileFilter;
 
-import play.vfs.VirtualFile;
 import press.PressFileWriter;
 
 public class PressFileFilter implements FileFilter {
