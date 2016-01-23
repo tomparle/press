@@ -15,170 +15,169 @@ import java.util.regex.Pattern;
 import org.apache.commons.io.IOUtils;
 import org.mozilla.javascript.WrappedException;
 
-import play.Logger;
-import play.cache.Cache;
-
 import com.asual.lesscss.LessEngine;
 import com.asual.lesscss.LessException;
 
+import play.Logger;
+import play.cache.Cache;
+
 /**
- * Copied and modified from
- * https://github.com/lunatech-labs/play-module-less/blob
- * /master/src/play/modules/less/PlayLessEngine.java LessEngine wrapper for Play
+ * Copied and modified from https://github.com/lunatech-labs/play-module-less/blob /master/src/play/modules/less/PlayLessEngine.java LessEngine
+ * wrapper for Play
  */
 public class PlayLessEngine {
 
-    LessEngine lessEngine;
-    static Pattern importPattern = Pattern.compile(".*@import\\s*\"(.*?)\".*");
+	LessEngine lessEngine;
+	static Pattern importPattern = Pattern.compile(".*@import\\s*\"(.*?)\".*");
 
-    PlayLessEngine() {
-        lessEngine = new LessEngine();
-    }
+	PlayLessEngine() {
+		lessEngine = new LessEngine();
+	}
 
-    /**
-     * Get the CSS for this less file either from the cache, or compile it.
-     */
-    public String get(File lessFile, boolean compress) {
-        String cacheKey = "less_" + lessFile.getPath() + latestModified(lessFile);
-        String css = cacheGet(cacheKey, String.class);
-        if (css == null) {
-            css = compile(lessFile, compress);
-            cacheSet(cacheKey, css);
-        }
-        return css;
-    }
+	/**
+	 * Get the CSS for this less file either from the cache, or compile it.
+	 */
+	public String get(File lessFile, boolean compress) {
+		final String cacheKey = "less_" + lessFile.getPath() + latestModified(lessFile);
+		String css = cacheGet(cacheKey, String.class);
+		if (css == null) {
+			css = compile(lessFile, compress);
+			cacheSet(cacheKey, css);
+		}
+		return css;
+	}
 
-    /**
-     * Returns the latest of the last modified dates of this file and all files
-     * it imports
-     */
-    public static long latestModified(File lessFile) {
-        long lastModified = lessFile.lastModified();
-        for (File imported : getAllImports(lessFile)) {
-            lastModified = Math.max(lastModified, imported.lastModified());
-        }
-        return lastModified;
-    }
+	/**
+	 * Returns the latest of the last modified dates of this file and all files it imports
+	 */
+	public static long latestModified(File lessFile) {
+		long lastModified = lessFile.lastModified();
+		for (final File imported : getAllImports(lessFile)) {
+			lastModified = Math.max(lastModified, imported.lastModified());
+		}
+		return lastModified;
+	}
 
-    /**
-     * Returns a set composed of the file itself, followed by all files that it
-     * imports, the files they import, etc
-     */
-    public static Set<File> getAllImports(File lessFile) {
-        Set<File> imports = new HashSet<File>();
-        getAllImports(lessFile, imports);
-        return imports;
-    }
+	/**
+	 * Returns a set composed of the file itself, followed by all files that it imports, the files they import, etc
+	 */
+	public static Set<File> getAllImports(File lessFile) {
+		final Set<File> imports = new HashSet<File>();
+		getAllImports(lessFile, imports);
+		return imports;
+	}
 
-    protected static void getAllImports(File lessFile, Set<File> imports) {
-        imports.add(lessFile);
-        for (File imported : getImportsFromCacheOrFile(lessFile)) {
-            if (!imports.contains(imported)) {
-                getAllImports(imported, imports);
-            }
-        }
-    }
+	protected static void getAllImports(File lessFile, Set<File> imports) {
+		imports.add(lessFile);
+		for (final File imported : getImportsFromCacheOrFile(lessFile)) {
+			if (!imports.contains(imported)) {
+				getAllImports(imported, imports);
+			}
+		}
+	}
 
-    protected static Set<File> getImportsFromCacheOrFile(File lessFile) {
-        String cacheKey = "less_imports_" + lessFile.getPath() + lessFile.lastModified();
+	protected static Set<File> getImportsFromCacheOrFile(File lessFile) {
+		final String cacheKey = "less_imports_" + lessFile.getPath() + lessFile.lastModified();
 
-        Set<File> files = null;
-        cacheGet(cacheKey, Set.class);
+		Set<File> files = null;
+		cacheGet(cacheKey, Set.class);
 
-        if (files == null) {
-            try {
-                files = getImportsFromFile(lessFile);
-                cacheSet(cacheKey, files);
-            } catch (IOException e) {
-                Logger.error(e, "IOException trying to determine imports in LESS file");
-                files = new HashSet<File>();
-            }
-        }
-        return files;
-    }
+		if (files == null) {
+			try {
+				files = getImportsFromFile(lessFile);
+				cacheSet(cacheKey, files);
+			} catch (final IOException e) {
+				Logger.error(e, "IOException trying to determine imports in LESS file");
+				files = new HashSet<File>();
+			}
+		}
+		return files;
+	}
 
-    protected static Set<File> getImportsFromFile(File lessFile) throws IOException {
-        if (!lessFile.exists()) {
-            return Collections.emptySet();
-        }
+	protected static Set<File> getImportsFromFile(File lessFile) throws IOException {
+		if (!lessFile.exists()) {
+			return Collections.emptySet();
+		}
 
-        BufferedReader r = new BufferedReader(new FileReader(lessFile));
-        try {
-            Set<File> files = new HashSet<File>();
-            String line;
-            while ((line = r.readLine()) != null) {
-                Matcher m = importPattern.matcher(line);
-                while (m.find()) {
-                    File file = new File(lessFile.getParentFile(), m.group(1));
-                    if (!file.exists())
-                        file = new File(lessFile.getParentFile(), m.group(1) + ".less");
-                    files.add(file);
-                    files.addAll(getImportsFromCacheOrFile(file));
-                }
-            }
-            return files;
-        } finally {
-            IOUtils.closeQuietly(r);
-        }
-    }
+		final BufferedReader r = new BufferedReader(new FileReader(lessFile));
+		try {
+			final Set<File> files = new HashSet<File>();
+			String line;
+			while ((line = r.readLine()) != null) {
+				final Matcher m = importPattern.matcher(line);
+				while (m.find()) {
+					File file = new File(lessFile.getParentFile(), m.group(1));
+					if (!file.exists()) {
+						file = new File(lessFile.getParentFile(), m.group(1) + ".less");
+					}
+					files.add(file);
+					files.addAll(getImportsFromCacheOrFile(file));
+				}
+			}
+			return files;
+		} finally {
+			IOUtils.closeQuietly(r);
+		}
+	}
 
-    protected String compile(File lessFile, boolean compress) {
-        try {
-            String css = lessEngine.compile(lessFile, compress);
-            // There seems to be a bug whereby \n's are sometimes escaped
-            return css.replace("\\n", "\n");
-        } catch (LessException e) {
-            return handleException(lessFile, e);
-        }
-    }
+	protected String compile(File lessFile, boolean compress) {
+		try {
+			final String css = lessEngine.compile(lessFile, compress);
+			// There seems to be a bug whereby \n's are sometimes escaped
+			return css.replace("\\n", "\n");
+		} catch (final LessException e) {
+			return handleException(lessFile, e);
+		} catch (final IOException e) {
+			throw new RuntimeException(e);
+		}
+	}
 
-    public String handleException(File lessFile, LessException e) {
-        Logger.warn(e, "Less exception");
+	public String handleException(File lessFile, LessException e) {
+		Logger.warn(e, "Less exception");
 
-        String filename = e.getFilename();
-        List<String> extractList = e.getExtract();
-        String extract = null;
-        if (extractList != null) {
-            extract = extractList.toString();
-        }
+		String filename = e.getFilename();
+		final List<String> extractList = e.getExtract();
+		String extract = null;
+		if (extractList != null) {
+			extract = extractList.toString();
+		}
 
-        // LessEngine reports the file as null when it's not an @imported file
-        if (filename == null) {
-            filename = lessFile.getName();
-        }
+		// LessEngine reports the file as null when it's not an @imported file
+		if (filename == null) {
+			filename = lessFile.getName();
+		}
 
-        // Try to detect missing imports (flaky)
-        if (extract == null && e.getCause() instanceof WrappedException) {
-            WrappedException we = (WrappedException) e.getCause();
-            if (we.getCause() instanceof FileNotFoundException) {
-                FileNotFoundException fnfe = (FileNotFoundException) we.getCause();
-                extract = fnfe.getMessage();
-            }
-        }
+		// Try to detect missing imports (flaky)
+		if (extract == null && e.getCause() instanceof WrappedException) {
+			final WrappedException we = (WrappedException) e.getCause();
+			if (we.getCause() instanceof FileNotFoundException) {
+				final FileNotFoundException fnfe = (FileNotFoundException) we.getCause();
+				extract = fnfe.getMessage();
+			}
+		}
 
-        return formatMessage(filename, e.getLine(), e.getColumn(), extract, e.getType());
-    }
+		return formatMessage(filename, e.getLine(), e.getColumn(), extract, e.getType());
+	}
 
-    public String formatMessage(String filename, int line, int column, String extract,
-            String errorType) {
-        return "body:before {display: block; color: #c00; white-space: pre; font-family: monospace; background: #FDD9E1; border-top: 1px solid pink; border-bottom: 1px solid pink; padding: 10px; content: \"[LESS ERROR] "
-                + String.format("%s:%s: %s (%s)", filename, line, extract, errorType) + "\"; }";
-    }
+	public String formatMessage(String filename, int line, int column, String extract, String errorType) {
+		return "body:before {display: block; color: #c00; white-space: pre; font-family: monospace; background: #FDD9E1; border-top: 1px solid pink; border-bottom: 1px solid pink; padding: 10px; content: \"[LESS ERROR] "
+				+ String.format("%s:%s: %s (%s)", filename, line, extract, errorType) + "\"; }";
+	}
 
-    private static <T> T cacheGet(String key, Class<T> clazz) {
-        try {
-            return Cache.get(key, clazz);
-        } catch (NullPointerException e) {
-            Logger.info("LESS module: Cache not initialized yet. Request to regular action required to initialize cache in DEV mode.");
-            return null;
-        }
-    }
+	private static <T> T cacheGet(String key, Class<T> clazz) {
+		try {
+			return Cache.get(key, clazz);
+		} catch (final NullPointerException e) {
+			Logger.info("LESS module: Cache not initialized yet. Request to regular action required to initialize cache in DEV mode.");
+			return null;
+		}
+	}
 
-    private static void cacheSet(String key, Object value) {
-        try {
-            Cache.set(key, value);
-        } catch (NullPointerException e) {
-            Logger.info("LESS module: Cache not initialized yet. Request to regular action required to initialize cache in DEV mode.");
-        }
-    }
+	private static void cacheSet(String key, Object value) {
+		try {
+			Cache.set(key, value);
+		} catch (final NullPointerException e) {
+			Logger.info("LESS module: Cache not initialized yet. Request to regular action required to initialize cache in DEV mode.");
+		}
+	}
 }
