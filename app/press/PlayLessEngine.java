@@ -36,8 +36,10 @@ public class PlayLessEngine {
 
 	/**
 	 * Get the CSS for this less file either from the cache, or compile it.
+	 * 
+	 * @throws IOException
 	 */
-	public String get(File lessFile, boolean compress) {
+	public String get(File lessFile, boolean compress) throws IOException {
 		final String cacheKey = "less_" + lessFile.getPath() + latestModified(lessFile);
 		String css = cacheGet(cacheKey, String.class);
 		if (css == null) {
@@ -120,15 +122,13 @@ public class PlayLessEngine {
 		}
 	}
 
-	protected String compile(File lessFile, boolean compress) {
+	protected String compile(File lessFile, boolean compress) throws IOException {
 		try {
 			final String css = lessEngine.compile(lessFile, compress);
 			// There seems to be a bug whereby \n's are sometimes escaped
 			return css.replace("\\n", "\n");
 		} catch (final LessException e) {
 			return handleException(lessFile, e);
-		} catch (final IOException e) {
-			throw new RuntimeException(e);
 		}
 	}
 
