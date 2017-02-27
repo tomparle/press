@@ -1,5 +1,9 @@
 self: play -> press github
 
 require:
-    - com.yahoo.platform.yui -> yuicompressor 2.4.8
-    - com.asual.lesscss -> lesscss-engine 1.5.1
+    - com.yahoo.platform.yui -> yuicompressor 2.4.8:
+        exclude: # already included
+            - rhino -> js *
+    - com.asual.lesscss -> lesscss-engine 1.4.2:  # last version is 1.5.1 but does not work with yui
+        exclude: # already included 
+            - org.mozilla -> rhino *
